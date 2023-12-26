@@ -26,11 +26,15 @@ var cmds = map[string]cliCmd{
 }
 
 func main() {
-	fmt.Print("Pokedex > ")
+	fmt.Print("◓ > ")
 	s := bufio.NewScanner(os.Stdin)
 	for s.Scan() {
 		userCmd := s.Text()
-		cmds[userCmd].callback()
+		if cliCmd, ok := cmds[userCmd]; ok {
+			cliCmd.callback()
+		} else {
+            fmt.Println("Invalid command: use `help` if you're stuck.")
+        }
 		fmt.Print("Pokedex > ")
 	}
 }
@@ -42,7 +46,7 @@ Welcome to the Pokedex!
 Usage:
 help  Displays a help message
 exit  Exit the Pokedex`)
-    fmt.Println()
+	fmt.Println()
 	return nil
 }
 
