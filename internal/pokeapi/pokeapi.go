@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-type locationData struct {
+type LocationData struct {
 	Count    int    `json:"count"`
 	Next     string `json:"next"`
 	Previous string `json:"previous"`
@@ -16,8 +16,8 @@ type locationData struct {
 	} `json:"results"`
 }
 
-func GetLocations(url string) (locationData, error) {
-    var locations locationData
+func GetLocations(url string) (LocationData, error) {
+    var locations LocationData
 
 	r, err := http.Get(url)
 	if err != nil {

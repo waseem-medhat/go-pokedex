@@ -2,10 +2,13 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/wipdev-tech/go-pokedex/internal/pokeapi"
+	"github.com/wipdev-tech/go-pokedex/internal/pokecache"
 )
 
 type cliCmd struct {
@@ -17,11 +20,13 @@ type cliCmd struct {
 type cmdConfig struct {
 	next     string
 	previous string
+	cache    pokecache.Cache
 }
 
 var cfg = cmdConfig{
-	next:     "https://pokeapi.co/api/v2/location-area/",
+	next:     "https://pokeapi.co/api/v2/location-area/?offset=0&limit=20",
 	previous: "",
+	cache:    pokecache.NewCache(15 * time.Second),
 }
 
 var cmds = map[string]cliCmd{
@@ -85,13 +90,25 @@ func cmdExit(cfg *cmdConfig) error {
 
 func cmdMap(cfg *cmdConfig) error {
 	url := cfg.next
-	if url == "" {
+	if cfg.next == "" {
 		return fmt.Errorf("already at the end")
 	}
 
-	locations, err := pokeapi.GetLocations(url)
-	if err != nil {
-		return err
+	var locations pokeapi.LocationData
+	if cached, ok := cfg.cache.Get(url); ok {
+		json.Unmarshal(cached, &locations)
+	} else {
+		result, err := pokeapi.GetLocations(url)
+		if err != nil {
+			return err
+		}
+		locations = result
+
+		resultBytes, err := json.Marshal(locations)
+		if err != nil {
+			return err
+		}
+		cfg.cache.Add(url, resultBytes)
 	}
 
 	cfg.next = locations.Next
@@ -110,9 +127,21 @@ func cmdMapB(cfg *cmdConfig) error {
 		return fmt.Errorf("already at the start")
 	}
 
-	locations, err := pokeapi.GetLocations(url)
-	if err != nil {
-		return err
+	var locations pokeapi.LocationData
+	if cached, ok := cfg.cache.Get(url); ok {
+		json.Unmarshal(cached, &locations)
+    } else {
+		result, err := pokeapi.GetLocations(url)
+		if err != nil {
+			return err
+		}
+		locations = result
+
+		resultBytes, err := json.Marshal(locations)
+		if err != nil {
+			return err
+		}
+		cfg.cache.Add(url, resultBytes)
 	}
 
 	cfg.next = locations.Next
