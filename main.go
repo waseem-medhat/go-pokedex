@@ -96,7 +96,10 @@ func cmdMap(cfg *cmdConfig) error {
 
 	var locations pokeapi.LocationData
 	if cached, ok := cfg.cache.Get(url); ok {
-		json.Unmarshal(cached, &locations)
+		err := json.Unmarshal(cached, &locations)
+		if err != nil {
+			return err
+		}
 	} else {
 		result, err := pokeapi.GetLocations(url)
 		if err != nil {
@@ -129,8 +132,11 @@ func cmdMapB(cfg *cmdConfig) error {
 
 	var locations pokeapi.LocationData
 	if cached, ok := cfg.cache.Get(url); ok {
-		json.Unmarshal(cached, &locations)
-    } else {
+		err := json.Unmarshal(cached, &locations)
+		if err != nil {
+			return err
+		}
+	} else {
 		result, err := pokeapi.GetLocations(url)
 		if err != nil {
 			return err

@@ -17,7 +17,7 @@ type LocationData struct {
 }
 
 func GetLocations(url string) (LocationData, error) {
-    var locations LocationData
+	var locations LocationData
 
 	r, err := http.Get(url)
 	if err != nil {
@@ -30,6 +30,10 @@ func GetLocations(url string) (LocationData, error) {
 		return locations, err
 	}
 
-	json.Unmarshal(body, &locations)
-    return locations, nil
+	err = json.Unmarshal(body, &locations)
+	if err != nil {
+		return locations, err
+	}
+
+	return locations, err
 }

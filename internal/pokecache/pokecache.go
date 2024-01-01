@@ -24,7 +24,7 @@ func NewCache(interval time.Duration) Cache {
 	go func() {
 		ticker := time.NewTicker(interval)
 		for range ticker.C {
-			c.reapLoop()
+			c.reap(interval)
 		}
 	}()
 
@@ -53,13 +53,13 @@ func (c Cache) Get(key string) ([]byte, bool) {
 	return entry.val, ok
 }
 
-func (c Cache) reapLoop() {
+func (c Cache) reap(interval time.Duration) {
 	c.m.Lock()
 	defer c.m.Unlock()
 
 	for key, entry := range c.entries {
-		diff := entry.craetedAt.Sub(time.Now())
-		if diff < -5*time.Second {
+		diff := time.Until(entry.craetedAt)
+		if diff < -interval {
 			// fmt.Println("\n[POKECACHE]: removing", key)
 			// fmt.Println()
 			// fmt.Print("◓ > ")
