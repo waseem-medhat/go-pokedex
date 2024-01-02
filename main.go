@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/wipdev-tech/go-pokedex/internal/pokeapi"
@@ -14,7 +15,7 @@ import (
 type cliCmd struct {
 	name        string
 	description string
-	callback    func(*cmdConfig) error
+	callback    func(*cmdConfig, string) error
 }
 
 type cmdConfig struct {
@@ -50,15 +51,25 @@ var cmds = map[string]cliCmd{
 		description: "Get previous 20 locations",
 		callback:    cmdMapB,
 	},
+	"explore": {
+		name:        "explore",
+		description: "Explore an area",
+		callback:    cmdExplore,
+	},
 }
 
 func main() {
 	fmt.Print("◓ > ")
 	s := bufio.NewScanner(os.Stdin)
 	for s.Scan() {
-		userCmd := s.Text()
+		userInput := strings.Fields(s.Text())
+		userCmd := userInput[0]
+		var arg string
+		if len(userInput) > 1 {
+			arg = userInput[1]
+		}
 		if cliCmd, ok := cmds[userCmd]; ok {
-			err := cliCmd.callback(&cfg)
+			err := cliCmd.callback(&cfg, arg)
 			if err != nil {
 				fmt.Println("Error:", err)
 			}
@@ -69,7 +80,7 @@ func main() {
 	}
 }
 
-func cmdHelp(cfg *cmdConfig) error {
+func cmdHelp(cfg *cmdConfig, area string) error {
 	fmt.Println(`
 Welcome to the Pokedex!
 
@@ -82,13 +93,13 @@ exit  Exit the Pokedex`)
 	return nil
 }
 
-func cmdExit(cfg *cmdConfig) error {
+func cmdExit(cfg *cmdConfig, area string) error {
 	fmt.Println("Bye!")
 	os.Exit(0)
 	return nil
 }
 
-func cmdMap(cfg *cmdConfig) error {
+func cmdMap(cfg *cmdConfig, area string) error {
 	url := cfg.next
 	if cfg.next == "" {
 		return fmt.Errorf("already at the end")
@@ -124,7 +135,7 @@ func cmdMap(cfg *cmdConfig) error {
 	return nil
 }
 
-func cmdMapB(cfg *cmdConfig) error {
+func cmdMapB(cfg *cmdConfig, area string) error {
 	url := cfg.previous
 	if url == "" {
 		return fmt.Errorf("already at the start")
@@ -155,6 +166,41 @@ func cmdMapB(cfg *cmdConfig) error {
 
 	for _, loc := range locations.Results {
 		fmt.Println(loc.Name)
+	}
+
+	return nil
+}
+
+func cmdExplore(cfg *cmdConfig, area string) error {
+	if area == "" {
+		return fmt.Errorf("No area given")
+	}
+	url := "https://pokeapi.co/api/v2/location-area/" + area
+	fmt.Printf("Exploring %s...\n", area)
+
+	var exploreData pokeapi.ExploreData
+	if cached, ok := cfg.cache.Get(url); ok {
+		err := json.Unmarshal(cached, &exploreData)
+		if err != nil {
+			return err
+		}
+	} else {
+		result, err := pokeapi.GetExplore(url)
+		if err != nil {
+			return err
+		}
+		exploreData = result
+
+		resultBytes, err := json.Marshal(exploreData)
+		if err != nil {
+			return err
+		}
+		cfg.cache.Add(url, resultBytes)
+	}
+
+    fmt.Println("Found Pokemon:")
+	for _, pokemonEncounter := range exploreData.PokemonEncounters {
+		fmt.Println("-", pokemonEncounter.Pokemon.Name)
 	}
 
 	return nil
