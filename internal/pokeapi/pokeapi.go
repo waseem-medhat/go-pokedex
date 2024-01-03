@@ -25,6 +25,28 @@ type ExploreData struct {
 	} `json:"pokemon_encounters"`
 }
 
+type Pokemon struct {
+	BaseExperience int    `json:"base_experience"`
+	Height         int    `json:"height"`
+	Name           string `json:"name"`
+	Stats          []struct {
+		BaseStat int `json:"base_stat"`
+		Effort   int `json:"effort"`
+		Stat     struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Slot int `json:"slot"`
+		Type struct {
+			Name string `json:"name"`
+			URL  string `json:"url"`
+		} `json:"type"`
+	} `json:"types"`
+	Weight int `json:"weight"`
+}
+
 func GetLocations(url string) (LocationData, error) {
 	var locations LocationData
 
@@ -55,10 +77,10 @@ func GetExplore(url string) (ExploreData, error) {
 		return exploreData, err
 	}
 
-    if r.StatusCode == http.StatusNotFound {
-        err = fmt.Errorf("Not found")
-        return exploreData, err
-    }
+	if r.StatusCode == http.StatusNotFound {
+		err = fmt.Errorf("Not found")
+		return exploreData, err
+	}
 
 	body, err := io.ReadAll(r.Body)
 	r.Body.Close()
@@ -72,4 +94,31 @@ func GetExplore(url string) (ExploreData, error) {
 	}
 
 	return exploreData, err
+}
+
+func GetPokemon(url string) (Pokemon, error) {
+	var pokemon Pokemon
+
+	r, err := http.Get(url)
+	if err != nil {
+		return pokemon, err
+	}
+
+	if r.StatusCode == http.StatusNotFound {
+		err = fmt.Errorf("Not found")
+		return pokemon, err
+	}
+
+	body, err := io.ReadAll(r.Body)
+	r.Body.Close()
+	if err != nil {
+		return pokemon, err
+	}
+
+	err = json.Unmarshal(body, &pokemon)
+	if err != nil {
+		return pokemon, err
+	}
+
+	return pokemon, err
 }
