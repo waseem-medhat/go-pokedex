@@ -68,6 +68,11 @@ var cmds = map[string]cliCmd{
 		description: "Inspect a Pokemon from your Pokedex",
 		callback:    cmdInspect,
 	},
+	"pokedex": {
+		name:        "pokedex",
+		description: "List Pokemon in your Pokedex",
+		callback:    cmdPokedex,
+	},
 }
 
 func main() {
@@ -263,23 +268,35 @@ func catch(baseExp int) bool {
 }
 
 func cmdInspect(cfg *cmdConfig, name string) error {
-    pokemon, ok := cfg.pokedex[name]
-    if !ok {
-        fmt.Println("You did not catch that Pokemon")
-        return nil
+	pokemon, ok := cfg.pokedex[name]
+	if !ok {
+		fmt.Println("You did not catch that Pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", pokemon.Name)
+	fmt.Printf("Height: %d\n", pokemon.Height)
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+	fmt.Println("Stats")
+	for _, s := range pokemon.Stats {
+		fmt.Printf("  - %s: %d\n", s.Stat.Name, s.BaseStat)
+	}
+	fmt.Println("Types")
+	for _, t := range pokemon.Types {
+		fmt.Printf("  - %s\n", t.Type.Name)
+	}
+
+	return nil
+}
+
+func cmdPokedex(cfg *cmdConfig, name string) error {
+    if len(cfg.pokedex) == 0 {
+        fmt.Println("Your Pokedex is empty. Catch some Pokemon!")
     }
 
-    fmt.Printf("Name: %s\n", pokemon.Name)
-    fmt.Printf("Height: %d\n", pokemon.Height)
-    fmt.Printf("Weight: %d\n", pokemon.Weight)
-    fmt.Println("Stats")
-    for _, s := range pokemon.Stats {
-        fmt.Printf("  - %s: %d\n", s.Stat.Name, s.BaseStat)
-    }
-    fmt.Println("Types")
-    for _, t := range pokemon.Types {
-        fmt.Printf("  - %s\n", t.Type.Name)
-    }
-
-    return nil
+	fmt.Println("Your Pokedex")
+	for name := range cfg.pokedex {
+		fmt.Printf("  - %s\n", name)
+	}
+	return nil
 }
